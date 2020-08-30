@@ -2,6 +2,7 @@ package main
 
 import (
 	"autobullshiter/api"
+	"autobullshiter/middleware"
 	"autobullshiter/model"
 
 	"github.com/joho/godotenv"
@@ -11,7 +12,10 @@ import (
 func main() {
 	godotenv.Load()
 	model.Init()
+
 	e := echo.New()
+
+	e.Use(middleware.Cors())
 
 	e.POST("/api/generate", api.Generate)
 
