@@ -25,6 +25,9 @@ func (service *GenerateService) Generate() interface{} {
 		if err != nil {
 			return err
 		}
+		if len(surfixes) == 0 {
+			break
+		}
 		t[0] = t[1]
 		rand.Seed(time.Now().Unix())
 		i := rand.Int() % len(surfixes)
