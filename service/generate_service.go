@@ -5,35 +5,42 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/yanyiwu/gojieba"
 )
 
 // GenerateService 生成字符串服务
 type GenerateService struct {
-	Prefix1 string `form:"prefix1" json:"prefix1" binding:"required,min=1,max=64"`
-	Prefix2 string `form:"prefix2" json:"prefix2" binding:"required,min=1,max=64"`
-	Length  uint16 `form:"length" json:"length" binding:"required,min=1,max=32700"`
+	PreString string `form:"prestr" json:"prestr" binding:"required,min=1,max=256"`
+	Length    uint16 `form:"length" json:"length" binding:"required,min=1,max=32700"`
 }
 
 // Generate 生成字符串
 func (service *GenerateService) Generate() interface{} {
 	var str string
-	t := []string{service.Prefix1, service.Prefix2}
+	jieba := gojieba.NewJieba()
+	defer jieba.Free()
+
+	w := jieba.Cut(service.PreString, true)
+	pre := []string{w[len(w)-3], w[len(w)-2], w[len(w)-1]}
 
 	for i := 1; i <= int(service.Length); i++ {
-		str += t[0]
-		surfixes, err := model.DB.LRange(fmt.Sprintf("('%s', '%s')", t[0], t[1]), 0, -1).Result()
+		surfixes, err := model.DB.LRange(fmt.Sprintf("('%s', '%s', '%s')", pre[0], pre[1], pre[2]), 0, -1).Result()
 		if err != nil {
 			return err
 		}
 		if len(surfixes) == 0 {
 			break
 		}
-		t[0] = t[1]
+
+		pre[0] = pre[1]
+		pre[1] = pre[2]
 		rand.Seed(time.Now().Unix())
-		i := rand.Int() % len(surfixes)
-		t[1] = surfixes[i]
+		j := rand.Int() % len(surfixes)
+		pre[2] = surfixes[j]
+
+		str += pre[2]
 	}
 
-	return str
-
+	return service.PreString + str
 }
